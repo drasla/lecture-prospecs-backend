@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELED
+  RETURN_REQUESTED
+  RETURN_COMPLETED
+}
+
+model MallSetting {
+  id                  Int      @id @default(autoincrement())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  deliveryInfo        String   @db.Text
+  returnPeriod        String
+  returnCoast         String
+  nonReturnableReason String   @db.Text
+  privacyPolicy       String   @db.Text
+  termOfService       String   @db.Text
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  name      String
+  phone     String?
+  zipCode   String
+  address1  String
+  address2  String
+  orders    Order[]
+  cart      Cart?
+  reviews   Review[]
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  name      String    @unique
+  products  Product[]
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  description String   @db.Text
+  summary     String?  @db.Text
+  price       Int
+  isNew       Boolean  @default(false)
+  isBest      Boolean  @default(false)
+
+  material         String?
+  colorInfo        String?
+  sizeInfo         String?
+  manufacturer     String?
+  originCountry    String?
+  careInstructions String?
+  manufactureDate  String?
+  qualityAssurance String?
+  asPhone          String?
+
+  categoryId Int
+  category   Category        @relation(fields: [categoryId], references: [id])
+  images     ProductImage[]
+  options    ProductOption[]
+  Review     Review[]
+}
+
+model ProductImage {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  url       String
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+model ProductOption {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  color     String
+  size      String
+  stock     Int      @default(0)
+
+  productId Int
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  CartItem  CartItem[]
+  OrderItem OrderItem[]
+}
+
+model Cart {
+  id        Int        @id @default(autoincrement())
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  userId    Int        @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  quantity  Int      @default(0)
+  cartId    Int
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  productOptionId Int
+  productOption   ProductOption @relation(fields: [productOptionId], references: [id])
+}
+
+model Order {
+  id          Int         @id @default(autoincrement())
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  status      OrderStatus @default(PENDING)
+  totalAmount Int
+  zipCode     String
+  address1    String
+  address2    String
+
+  userId Int
+  user   User        @relation(fields: [userId], references: [id])
+  items  OrderItem[]
+}
+
+model OrderItem {
+  id              Int           @id @default(autoincrement())
+  quantity        Int
+  price           Int
+  orderId         Int
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productOptionId Int
+  productOption   ProductOption @relation(fields: [productOptionId], references: [id])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  rating    Int
+  content   String?
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+}
