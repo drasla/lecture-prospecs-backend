@@ -1,0 +1,62 @@
+components:
+  schemas:
+    # ----------------------------------------------------------------
+    # [Model] User (Prisma Schema 기준)
+    # ----------------------------------------------------------------
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        emailOptIn:
+          type: boolean
+          description: 이메일 수신 여부
+        name:
+          type: string
+        phone:
+          type: string
+        smsOptIn:
+          type: boolean
+          description: SMS 수신 여부
+        birthdate:
+          type: string
+        gender:
+          type: string
+          enum: [ MALE, FEMALE ]
+        zipCode:
+          type: string
+          description: 우편번호
+          example: "06035"
+        address1:
+          type: string
+          description: 기본 주소
+          example: "서울 강남구 가로수길 1"
+        address2:
+          type: string
+          description: 상세 주소
+          example: "101호"
+        createdAt:
+          type: string
+          format: date-time
+          description: 가입일
+        updatedAt:
+          type: string
+          format: date-time
+          description: 수정일
+
+    # ----------------------------------------------------------------
+    # [Error] 공통 에러 응답
+    # ----------------------------------------------------------------
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: 에러 메시지
+          example: "요청을 처리하는 중 오류가 발생했습니다."
+        error:
+          type: string
+          nullable: true
+          description: 상세 에러 내용 (개발 환경용)

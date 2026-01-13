@@ -13,6 +13,11 @@ enum Role {
   ADMIN
 }
 
+enum Gender {
+  MALE
+  FEMALE
+}
+
 enum OrderStatus {
   PENDING
   PAID
@@ -57,21 +62,25 @@ model MallSetting {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  email     String    @unique
-  password  String
-  role      Role      @default(USER)
-  name      String
-  phone     String?
-  zipCode   String
-  address1  String
-  address2  String
-  orders    Order[]
-  cart      Cart?
-  reviews   Review[]
-  inquiries Inquiry[]
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  email      String    @unique
+  password   String
+  role       Role      @default(USER)
+  name       String
+  birthdate  String
+  gender     Gender
+  phone      String
+  zipCode    String?
+  address1   String?
+  address2   String?
+  emailOptIn Boolean   @default(false)
+  smsOptIn   Boolean   @default(false)
+  orders     Order[]
+  cart       Cart?
+  reviews    Review[]
+  inquiries  Inquiry[]
 }
 
 model Category {

@@ -1,0 +1,167 @@
+tags:
+  - name: Inquiry
+    description: 1:1 문의 및 답변 관리
+
+components:
+  schemas:
+    # ----------------------------------------------------------------
+    # [Model] InquiryImage (문의 첨부 이미지)
+    # ----------------------------------------------------------------
+    InquiryImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 이미지 고유 ID
+          example: 1
+        url:
+          type: string
+          format: uri
+          description: 이미지 URL (Firebase Storage)
+          example: "https://storage.googleapis.com/bucket/inquiries/1234_image.jpg"
+        inquiryId:
+          type: integer
+          description: 연결된 문의 ID
+          example: 10
+
+    # ----------------------------------------------------------------
+    # [Model] Inquiry (문의 내역)
+    # ----------------------------------------------------------------
+    Inquiry:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 문의 고유 ID
+          example: 10
+        type:
+          type: string
+          enum: [DELIVERY, PRODUCT, EXCHANGE_RETURN, MEMBER, OTHER]
+          description: |
+            문의 유형
+            - DELIVERY: 배송
+            - PRODUCT: 상품
+            - EXCHANGE_RETURN: 교환/반품
+            - MEMBER: 회원관련
+            - OTHER: 기타
+          example: "PRODUCT"
+        title:
+          type: string
+          description: 문의 제목
+          example: "상품 사이즈 문의합니다."
+        content:
+          type: string
+          description: 문의 내용
+          example: "270 사이즈 재고 언제 들어오나요?"
+        status:
+          type: string
+          enum: [PENDING, ANSWERED]
+          description: |
+            답변 상태
+            - PENDING: 답변 대기
+            - ANSWERED: 답변 완료
+          example: "PENDING"
+        answer:
+          type: string
+          nullable: true
+          description: 관리자 답변 내용
+          example: null
+        answeredAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 답변 일시
+          example: null
+        userId:
+          type: integer
+          description: 작성자 ID
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+          description: 등록일
+        updatedAt:
+          type: string
+          format: date-time
+          description: 수정일
+        images:
+          type: array
+          description: 첨부된 이미지 목록
+          items:
+            $ref: '#/components/schemas/InquiryImage'
+
+    # ----------------------------------------------------------------
+    # [Response] 문의 생성 응답
+    # ----------------------------------------------------------------
+    InquiryResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Inquiry created successfully"
+        inquiry:
+          $ref: '#/components/schemas/Inquiry'
+
+paths:
+  /api/inquiries:
+    post:
+      summary: 1:1 문의 등록 (이미지 포함)
+      tags: [Inquiry]
+      description: |
+        제목, 내용, 유형과 함께 이미지 파일들을 `multipart/form-data`로 전송합니다.
+        이미지는 Firebase Storage에 업로드되고 URL로 저장됩니다.
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+                - type
+              properties:
+                type:
+                  type: string
+                  enum: [DELIVERY, PRODUCT, EXCHANGE_RETURN, MEMBER, OTHER]
+                  description: 문의 유형
+                title:
+                  type: string
+                  description: 문의 제목
+                content:
+                  type: string
+                  description: 문의 내용
+                images:
+                  type: array
+                  description: 첨부 이미지 파일 (다중 선택 가능, 최대 5개)
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        201:
+          description: 문의 등록 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InquiryResponse'
+        400:
+          description: 필수 값 누락 또는 잘못된 데이터
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        401:
+          description: 인증 실패 (토큰 없음)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: 서버 에러 (파일 업로드 실패 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
