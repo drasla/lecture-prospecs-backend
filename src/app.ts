@@ -5,6 +5,7 @@ import { specs } from "./config/swagger";
 import { validateClientKey } from "./middlewares/clientAuthMiddleware";
 import passport from "passport";
 import { jwtStrategy } from "./config/passport";
+import adminCategoryRoutes from "./routes/adminCategoryRoutes";
 
 const app = express();
 const PORT = 4001;
@@ -18,7 +19,8 @@ passport.use(jwtStrategy); // 전략 등록
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 app.use(validateClientKey);
-app.use('/api/auth', authRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/admin/categories", adminCategoryRoutes);
 
 app.listen(PORT, () => {
     console.log(`[server]: Server is running at http://localhost:${PORT}`);
