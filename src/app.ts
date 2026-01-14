@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import authRoutes from "./routes/authRoutes";
 import { specs } from "./config/swagger";
@@ -10,6 +11,7 @@ import adminCategoryRoutes from "./routes/adminCategoryRoutes";
 const app = express();
 const PORT = 4001;
 
+app.use(cors())
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -84,33 +84,42 @@ model User {
 }
 
 model Category {
-  id        Int       @id @default(autoincrement())
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  name      String    @unique
-  products  Product[]
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String
+  path      String
+
+  parentId Int?
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+
+  products Product[]
+
+  @@unique([parentId, path]) // 같은 부모 아래에서는 path가 중복되면 안 됨 (복합 유니크 키 권장)
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  name        String
-  description String   @db.Text
-  summary     String?  @db.Text
-  price       Int
-  isNew       Boolean  @default(false)
-  isBest      Boolean  @default(false)
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  material         String?
-  colorInfo        String?
-  sizeInfo         String?
-  manufacturer     String?
-  originCountry    String?
-  careInstructions String?
-  manufactureDate  String?
-  qualityAssurance String?
-  asPhone          String?
+  name        String
+  description String  @db.Text
+  summary     String? @db.Text
+  price       Int
+
+  isNew  Boolean @default(false)
+  isBest Boolean @default(false)
+
+  material         String? // 소재
+  sizeInfo         String? // 사이즈정보
+  manufacturer     String? // 제조사
+  originCountry    String? // 제조국
+  careInstructions String? // 세탁방법 및 취급시 주의사항
+  manufactureDate  String? // 제조년월
+  qualityAssurance String? // 품질보증기준
+  asPhone          String? // A/S 책임자와 전화번호
 
   categoryId Int
   category   Category       @relation(fields: [categoryId], references: [id])
@@ -119,11 +128,13 @@ model Product {
 }
 
 model ProductColor {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  colorName String
-  hexCode   String?
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  productCode String   @unique // 제품코드
+  colorName   String // 색상명
+  hexCode     String? // 색상칩
+  colorInfo   String? // 색상 상세 설명
 
   productId Int
   product   Product        @relation(fields: [productId], references: [id], onDelete: Cascade)

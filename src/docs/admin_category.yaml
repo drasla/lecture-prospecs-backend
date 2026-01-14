@@ -13,6 +13,15 @@ components:
         name:
           type: string
           example: "Running"
+        path:
+          type: string
+          description:
+            주소창 경로 (예: shoes)
+        parentId:
+          type: integer
+          nullable: true
+          description: 부모 카테고리 ID (null이면 1차 카테고리)
+          example: null
         createdAt:
           type: string
           format: date-time
@@ -24,10 +33,20 @@ components:
       type: object
       required:
         - name
+        - path
       properties:
         name:
           type: string
           example: "Hiking"
+        path:
+          type: string
+          description: "URL 경로에 사용될 영문 소문자"
+          example: "sneakers"
+      parentId:
+        type: integer
+        nullable: true
+        description: "부모 카테고리 ID (하위 카테고리 생성 시 필수, 1차 생성 시 생략)"
+        example: 1
 
 paths:
   /api/admin/categories:
@@ -48,10 +67,10 @@ paths:
                   $ref: '#/components/schemas/Category'
     post:
       summary: 카테고리 생성
-      tags: [Admin/Category]
+      tags: [ Admin/Category ]
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth: [ ]
+        - apiKeyAuth: [ ]
       requestBody:
         required: true
         content:
@@ -68,10 +87,23 @@ paths:
                 properties:
                   message:
                     type: string
+                    example: "Category created"
                   category:
                     $ref: '#/components/schemas/Category'
+        400:
+          description: 필수 값 누락
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: 부모 카테고리가 존재하지 않음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         409:
-          description: 중복된 카테고리명
+          description: 동일 레벨에 이미 존재하는 이름
           content:
             application/json:
               schema:
@@ -80,26 +112,48 @@ paths:
   /api/admin/categories/{id}:
     put:
       summary: 카테고리 수정
-      tags: [Admin/Category]
+      description: 카테고리의 이름과 경로(Path)를 수정합니다.
+      tags: [ Admin/Category ]
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - bearerAuth: [ ]
+        - apiKeyAuth: [ ]
       parameters:
         - in: path
           name: id
           schema:
             type: integer
           required: true
-          description: 카테고리 ID
+          description: 수정할 카테고리 ID
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CategoryInput'
+              $ref: '#/components/schemas/CategoryInput' # name, path 필수
       responses:
         200:
           description: 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  category:
+                    $ref: '#/components/schemas/Category'
+        404:
+          description: 카테고리 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        409:
+          description: 중복된 Path 존재
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
     delete:
       summary: 카테고리 삭제
       tags: [Admin/Category]

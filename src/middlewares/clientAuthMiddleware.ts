@@ -15,11 +15,11 @@ export const validateClientKey = (req: Request, res: Response, next: NextFunctio
 
     // 3. 헤더 값 가져오기
     const clientKey = req.headers['x-client-key'];
-    const validKey = process.env.CLIENT_KEY;
+    const validKey = process.env.API_CLIENT_KEY;
 
     // 서버 설정 에러 방지
     if (!validKey) {
-        console.error("FATAL ERROR: CLIENT_KEY is not defined in .env");
+        console.error("FATAL ERROR: API_CLIENT_KEY is not defined in .env");
         res.status(500).json({ message: "Server configuration error" });
         return;
     }
