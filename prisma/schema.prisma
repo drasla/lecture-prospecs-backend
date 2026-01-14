@@ -49,6 +49,40 @@ enum InquiryStatus {
   ANSWERED // 답변 완료
 }
 
+// [신규] 1. 종류 (체크박스 필터용)
+enum ProductStyle {
+  RACING // 레이싱화
+  LIGHTWEIGHT_RACING // 경량레이싱화
+  STABILITY // 안정화
+  CUSHION // 쿠션화
+  TRAIL_RUNNING // 트레일러닝화
+  LONG_PANTS // 긴바지
+  LONG_SLEEVE // 긴팔티셔츠
+  DOWN // 다운
+  DOWN_VEST // 다운베스트
+  LEGGINGS // 레깅스
+  SLEEVELESS // 민소매
+  SHORT_PANTS // 반바지
+  SHORT_SLEEVE // 반팔티셔츠
+  VEST // 베스트
+  UNDERWEAR_TOP // 언더웨어상의
+  JACKET // 자켓
+  ZIPUP_LONG // 집업긴팔티셔츠
+  TRAINING_TOP // 트레이닝상의
+  TRAINING_BOTTOM // 트레이닝하의
+  HOODIE // 후드티셔츠
+  UNIFORM // 경기복
+  BASEBALL_SHOE // 야구화
+  AUTHENTIC_CAP // 어센틱모자
+}
+
+// [신규] 2. 성별 (상품 필터용)
+enum ProductGender {
+  MALE // 남성
+  FEMALE // 여성
+  COMMON // 성인공통
+}
+
 model MallSetting {
   id                  Int      @id @default(autoincrement())
   createdAt           DateTime @default(now())
@@ -111,6 +145,9 @@ model Product {
 
   isNew  Boolean @default(false)
   isBest Boolean @default(false)
+
+  style  ProductStyle // 종류 (레이싱화, 자켓 등)
+  gender ProductGender // 성별 (남성, 여성, 공통)
 
   material         String? // 소재
   sizeInfo         String? // 사이즈정보

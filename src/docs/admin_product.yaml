@@ -57,7 +57,7 @@ components:
             $ref: '#/components/schemas/ProductSizeInput'
 
     # ----------------------------------------------------------------
-    # [Input] 상품 전체 입력
+    # [Input] 상품 전체 입력 (Style, Gender 추가됨)
     # ----------------------------------------------------------------
     ProductInput:
       type: object
@@ -66,6 +66,8 @@ components:
         - description
         - price
         - categoryId
+        - style
+        - gender
         - colors
       properties:
         name: { type: string }
@@ -74,20 +76,30 @@ components:
         price: { type: integer }
         categoryId: { type: integer }
 
-        # 메타 정보 (전부 포함)
+        # [신규] 필터 속성
+        style:
+          type: string
+          enum: [ RACING, LIGHTWEIGHT_RACING, STABILITY, CUSHION, TRAIL_RUNNING, LONG_PANTS, LONG_SLEEVE, DOWN, DOWN_VEST, LEGGINGS, SLEEVELESS, SHORT_PANTS, SHORT_SLEEVE, VEST, UNDERWEAR_TOP, JACKET, ZIPUP_LONG, TRAINING_TOP, TRAINING_BOTTOM, HOODIE, UNIFORM, BASEBALL_SHOE, AUTHENTIC_CAP ]
+          example: "RACING"
+        gender:
+          type: string
+          enum: [ MALE, FEMALE, COMMON ]
+          example: "COMMON"
+
+        # 메타 정보
         material: { type: string, example: "폴리에스터 100%" }
         manufacturer: { type: string, example: "(주)LS네트웍스" }
         originCountry: { type: string, example: "베트남" }
-        careInstructions: # [New]
+        careInstructions:
           type: string
           example: "손세탁 권장, 표백제 사용 금지"
-        manufactureDate: # [New]
+        manufactureDate:
           type: string
           example: "2023.10"
-        qualityAssurance: # [New]
+        qualityAssurance:
           type: string
           example: "관련 법 및 소비자 분쟁해결 기준에 따름"
-        asPhone: # [New]
+        asPhone:
           type: string
           example: "080-023-1020"
 
@@ -108,19 +120,41 @@ paths:
         - apiKeyAuth: []
       parameters:
         - in: query
-          name: page
-          schema:
-            type: integer
-            default: 1
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            default: 10
-        - in: query
           name: categoryId
           schema:
             type: integer
+
+        # [신규] styles 배열 파라미터
+        - in: query
+          name: styles
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ RACING, LIGHTWEIGHT_RACING, STABILITY, CUSHION, TRAIL_RUNNING, LONG_PANTS, LONG_SLEEVE, DOWN, DOWN_VEST, LEGGINGS, SLEEVELESS, SHORT_PANTS, SHORT_SLEEVE, VEST, UNDERWEAR_TOP, JACKET, ZIPUP_LONG, TRAINING_TOP, TRAINING_BOTTOM, HOODIE, UNIFORM, BASEBALL_SHOE, AUTHENTIC_CAP ]
+
+        # [신규] genders 배열 파라미터
+        - in: query
+          name: genders
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ MALE, FEMALE, COMMON ]
+
+        # [신규] sizes 배열 파라미터
+        - in: query
+          name: sizes
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
       responses:
         200:
           description: 조회 성공
@@ -132,7 +166,7 @@ paths:
                   products:
                     type: array
                     items:
-                      type: object # 실제 Product 모델 참조 권장
+                      type: object
                   meta:
                     type: object
                     properties:
@@ -143,9 +177,7 @@ paths:
     post:
       summary: 상품 등록
       tags: [Admin/Product]
-      description: |
-        상품, 색상, 이미지, 사이즈 정보를 계층 구조 JSON으로 한번에 등록합니다.
-        이미지는 미리 `/api/uploads` API를 통해 URL을 발급받아야 합니다.
+      description: 상품 정보와 필터 속성(style, gender)을 포함하여 등록합니다.
       security:
         - bearerAuth: []
         - apiKeyAuth: []
@@ -180,7 +212,7 @@ paths:
     put:
       summary: 상품 수정
       tags: [Admin/Product]
-      description: 기존 정보를 입력된 정보로 **완전히 대체**합니다. (색상/사이즈 포함)
+      description: 상품 정보를 수정합니다. (style, gender 포함)
       security:
         - bearerAuth: []
         - apiKeyAuth: []
