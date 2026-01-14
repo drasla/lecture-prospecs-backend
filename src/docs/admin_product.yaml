@@ -1,0 +1,215 @@
+tags:
+  - name: Admin/Product
+    description: 관리자 상품 관리 (JSON 기반, 이미지는 URL 사용)
+
+components:
+  schemas:
+    # ----------------------------------------------------------------
+    # [Input] 상품 사이즈
+    # ----------------------------------------------------------------
+    ProductSizeInput:
+      type: object
+      required:
+        - size
+        - stock
+      properties:
+        size:
+          type: string
+          example: "270"
+        stock:
+          type: integer
+          example: 100
+
+    # ----------------------------------------------------------------
+    # [Input] 상품 색상 (이미지 포함)
+    # ----------------------------------------------------------------
+    ProductColorInput:
+      type: object
+      required:
+        - productCode
+        - colorName
+        - images
+        - sizes
+      properties:
+        productCode:
+          type: string
+          description: 색상별 상품 고유 코드
+          example: "PW0UW25F303"
+        colorName:
+          type: string
+          example: "WHITE"
+        hexCode:
+          type: string
+          example: "#FFFFFF"
+        colorInfo:
+          type: string
+          example: "화이트 컬러 / 매쉬 소재"
+        images:
+          type: array
+          description: "업로드 API를 통해 받은 이미지 URL 리스트"
+          items:
+            type: string
+            format: uri
+            example: "https://storage.googleapis.com/.../img1.jpg"
+        sizes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSizeInput'
+
+    # ----------------------------------------------------------------
+    # [Input] 상품 전체 입력
+    # ----------------------------------------------------------------
+    ProductInput:
+      type: object
+      required:
+        - name
+        - description
+        - price
+        - categoryId
+        - colors
+      properties:
+        name: { type: string }
+        description: { type: string }
+        summary: { type: string }
+        price: { type: integer }
+        categoryId: { type: integer }
+
+        # 메타 정보 (전부 포함)
+        material: { type: string, example: "폴리에스터 100%" }
+        manufacturer: { type: string, example: "(주)LS네트웍스" }
+        originCountry: { type: string, example: "베트남" }
+        careInstructions: # [New]
+          type: string
+          example: "손세탁 권장, 표백제 사용 금지"
+        manufactureDate: # [New]
+          type: string
+          example: "2023.10"
+        qualityAssurance: # [New]
+          type: string
+          example: "관련 법 및 소비자 분쟁해결 기준에 따름"
+        asPhone: # [New]
+          type: string
+          example: "080-023-1020"
+
+        isNew: { type: boolean }
+        isBest: { type: boolean }
+        colors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductColorInput'
+
+paths:
+  /api/admin/products:
+    get:
+      summary: 상품 목록 조회
+      tags: [Admin/Product]
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: categoryId
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  products:
+                    type: array
+                    items:
+                      type: object # 실제 Product 모델 참조 권장
+                  meta:
+                    type: object
+                    properties:
+                      total: { type: integer }
+                      page: { type: integer }
+                      lastPage: { type: integer }
+
+    post:
+      summary: 상품 등록
+      tags: [Admin/Product]
+      description: |
+        상품, 색상, 이미지, 사이즈 정보를 계층 구조 JSON으로 한번에 등록합니다.
+        이미지는 미리 `/api/uploads` API를 통해 URL을 발급받아야 합니다.
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        201:
+          description: 등록 성공
+        409:
+          description: 중복된 상품 코드
+
+  /api/admin/products/{id}:
+    get:
+      summary: 상품 상세 조회
+      tags: [Admin/Product]
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: 성공
+
+    put:
+      summary: 상품 수정
+      tags: [Admin/Product]
+      description: 기존 정보를 입력된 정보로 **완전히 대체**합니다. (색상/사이즈 포함)
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        200:
+          description: 수정 성공
+
+    delete:
+      summary: 상품 삭제
+      tags: [Admin/Product]
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: 삭제 성공
