@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { categoryController } from '../controllers/categoryController';
+import { adminCategoryController } from '../controllers/admin.category.controller';
 import { authenticateJwt } from '../middlewares/authMiddleware';
 import { isAdmin } from '../middlewares/adminMiddleware';
 
@@ -9,15 +9,15 @@ const router = Router();
 router.use(authenticateJwt, isAdmin);
 
 // GET /admin/categories
-router.get('/', categoryController.getList);
+router.get('/', adminCategoryController.getList);
 
 // POST /admin/categories
-router.post('/', categoryController.create);
+router.post('/', adminCategoryController.create);
 
 // PUT /admin/categories/:id
-router.put('/:id', categoryController.update);
+router.put('/:id', adminCategoryController.update);
 
 // DELETE /admin/categories/:id
-router.delete('/:id', categoryController.delete);
+router.delete('/:id', adminCategoryController.delete);
 
 export default router;

@@ -6,14 +6,16 @@ import { specs } from "./config/swagger";
 import { validateClientKey } from "./middlewares/clientAuthMiddleware";
 import passport from "passport";
 import { jwtStrategy } from "./config/passport";
-import adminCategoryRoutes from "./routes/adminCategoryRoutes";
-import adminProductRoutes from "./routes/adminProductRoutes";
-import adminUploadRoutes from "./routes/adminUploadRoutes";
+import adminCategoryRoutes from "./routes/admin.category.routes";
+import adminProductRoutes from "./routes/admin.product.routes";
+import adminUploadRoutes from "./routes/admin.upload.routes";
+import productRoutes from "./routes/product.routes";
+import categoryRoutes from "./routes/category.routes";
 
 const app = express();
 const PORT = 4001;
 
-app.use(cors())
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -25,8 +27,10 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 app.use(validateClientKey);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin/categories", adminCategoryRoutes);
-app.use('/api/admin/products', adminProductRoutes);
-app.use('/api/admin/uploads', adminUploadRoutes);
+app.use("/api/admin/products", adminProductRoutes);
+app.use("/api/admin/uploads", adminUploadRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/categories", categoryRoutes);
 
 app.listen(PORT, () => {
     console.log(`[server]: Server is running at http://localhost:${PORT}`);

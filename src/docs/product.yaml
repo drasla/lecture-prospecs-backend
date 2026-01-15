@@ -1,0 +1,182 @@
+tags:
+  - name: Shop/Product
+    description: 사용자용 상품 조회 (목록, 상세, 필터링)
+
+components:
+  schemas:
+    # -----------------------
+    # Enums
+    # -----------------------
+    ProductStyle:
+      type: string
+      enum: [ RACING, LIGHTWEIGHT_RACING, STABILITY, CUSHION, TRAIL_RUNNING, LONG_PANTS, LONG_SLEEVE, DOWN, DOWN_VEST, LEGGINGS, SLEEVELESS, SHORT_PANTS, SHORT_SLEEVE, VEST, UNDERWEAR_TOP, JACKET, ZIPUP_LONG, TRAINING_TOP, TRAINING_BOTTOM, HOODIE, UNIFORM, BASEBALL_SHOE, AUTHENTIC_CAP ]
+
+    ProductGender:
+      type: string
+      enum: [ MALE, FEMALE, COMMON ]
+
+    # -----------------------
+    # Models
+    # -----------------------
+    ShopProductImage:
+      type: object
+      properties:
+        id: { type: integer }
+        url: { type: string }
+
+    ShopProductSize:
+      type: object
+      properties:
+        id: { type: integer }
+        size: { type: string }
+        stock: { type: integer }
+
+    ShopProductColor:
+      type: object
+      properties:
+        id: { type: integer }
+        productCode: { type: string }
+        colorName: { type: string }
+        hexCode: { type: string }
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShopProductImage'
+        sizes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShopProductSize'
+
+    ShopProduct:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        price: { type: integer }
+        description: { type: string }
+        summary: { type: string }
+        style: { $ref: '#/components/schemas/ProductStyle' }
+        gender: { $ref: '#/components/schemas/ProductGender' }
+        isNew: { type: boolean }
+        isBest: { type: boolean }
+        # 메타 정보
+        material: { type: string }
+        manufacturer: { type: string }
+        originCountry: { type: string }
+        colors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShopProductColor'
+        category:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+
+    # -----------------------
+    # Responses
+    # -----------------------
+    ShopProductListResponse:
+      type: object
+      properties:
+        meta:
+          type: object
+          properties:
+            total: { type: integer }
+            page: { type: integer }
+            lastPage: { type: integer }
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShopProduct'
+
+paths:
+  /api/products:
+    get:
+      summary: 상품 목록 조회 (필터링)
+      tags: [Shop/Product]
+      description: |
+        카테고리, 종류, 성별, 사이즈 필터를 적용하여 상품 목록을 조회합니다.
+        배열 파라미터는 `key=A&key=B` 형태로 전달합니다.
+      security:
+        - clientKey: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: 페이지 번호
+
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 40
+          description: 페이지당 항목 수
+
+        - in: query
+          name: categoryId
+          schema:
+            type: integer
+          description: 카테고리 ID
+
+        - in: query
+          name: styles
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ProductStyle'
+          description: "종류 필터 (예: styles=RACING&styles=JACKET)"
+
+        - in: query
+          name: genders
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/ProductGender'
+          description: "성별 필터 (예: genders=MALE)"
+
+        - in: query
+          name: sizes
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+          description: "사이즈 필터 (예: sizes=270&sizes=XL)"
+
+      responses:
+        200:
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopProductListResponse'
+
+  /api/products/{id}:
+    get:
+      summary: 상품 상세 조회
+      tags: [Shop/Product]
+      security:
+        - clientKey: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShopProduct'
+        404:
+          description: 상품을 찾을 수 없음

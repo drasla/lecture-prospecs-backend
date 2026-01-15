@@ -16,7 +16,7 @@ interface CategoryBody {
     name: string;
 }
 
-export const categoryController = {
+export const adminCategoryController = {
     // 생성
     create: async (req: Request<{}, {}, CreateCategoryBody>, res: Response) => {
         try {

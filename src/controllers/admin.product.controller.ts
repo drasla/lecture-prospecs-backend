@@ -8,7 +8,7 @@ const parseArrayQuery = (query: any): string[] => {
     return Array.isArray(query) ? (query as string[]) : [query as string];
 };
 
-export const productController = {
+export const adminProductController = {
     // 생성
     create: async (req: Request<{}, {}, CreateProductInput>, res: Response) => {
         try {
