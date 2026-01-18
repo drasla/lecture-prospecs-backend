@@ -13,4 +13,17 @@ export const categoryController = {
             next(error);
         }
     },
+
+    // [New] 단일 카테고리 상세 조회 (Breadcrumbs 포함)
+    getOne: async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const id = Number(req.params.id);
+            if (isNaN(id)) throw new Error("INVALID_ID");
+
+            const category = await categoryService.getCategoryById(id);
+            res.status(200).json(category);
+        } catch (error) {
+            next(error);
+        }
+    },
 };

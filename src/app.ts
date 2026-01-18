@@ -11,6 +11,7 @@ import adminProductRoutes from "./routes/admin.product.routes";
 import adminUploadRoutes from "./routes/admin.upload.routes";
 import productRoutes from "./routes/product.routes";
 import categoryRoutes from "./routes/category.routes";
+import cartRoutes from "./routes/cart.routes";
 
 const app = express();
 const PORT = 4001;
@@ -31,6 +32,7 @@ app.use("/api/admin/products", adminProductRoutes);
 app.use("/api/admin/uploads", adminUploadRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/cart", cartRoutes);
 
 app.listen(PORT, () => {
     console.log(`[server]: Server is running at http://localhost:${PORT}`);

@@ -1,0 +1,181 @@
+  tags:
+    - name: Shop/Cart
+      description: 장바구니 관리 (회원 전용)
+
+  components:
+    schemas:
+      # -----------------------
+      # Request Bodies
+      # -----------------------
+      AddCartItemRequest:
+        type: object
+        required:
+          - productSizeId
+          - quantity
+        properties:
+          productSizeId:
+            type: integer
+            description: "선택한 사이즈 옵션의 고유 ID (ProductSize ID)"
+            example: 12
+          quantity:
+            type: integer
+            description: "담을 수량 (기본 1)"
+            example: 1
+
+      UpdateCartItemRequest:
+        type: object
+        required:
+          - quantity
+        properties:
+          quantity:
+            type: integer
+            description: "변경할 수량"
+            example: 3
+
+      # -----------------------
+      # Response Models
+      # -----------------------
+      # 장바구니 아이템 상세 (상품 정보 포함)
+      CartItemDetail:
+        type: object
+        properties:
+          id:
+            type: integer
+            description: CartItem ID (삭제/수정 시 사용)
+          quantity:
+            type: integer
+          productSizeId:
+            type: integer
+          productSize:
+            type: object
+            properties:
+              id: { type: integer }
+              size: { type: string, example: "270" }
+              stock: { type: integer }
+              productColor:
+                type: object
+                properties:
+                  colorName: { type: string, example: "BLACK" }
+                  hexCode: { type: string }
+                  images:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        url: { type: string }
+                  product:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      name: { type: string, example: "소닉 5" }
+                      price: { type: integer, example: 129000 }
+
+      # 장바구니 전체 응답
+      CartResponse:
+        type: object
+        properties:
+          id:
+            type: integer
+            description: 장바구니 고유 ID
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/CartItemDetail'
+
+  paths:
+    /api/cart:
+      get:
+        summary: 내 장바구니 조회
+        tags: [Shop/Cart]
+        description: |
+          로그인한 사용자의 장바구니 목록을 조회합니다.
+          상품의 상세 정보(이미지, 가격, 옵션명)가 포함되어 있습니다.
+        security:
+          - clientKey: []
+          - bearerAuth: [] # JWT 토큰 필수
+        responses:
+          200:
+            description: 조회 성공
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CartResponse'
+          401:
+            description: 인증 실패 (로그인 필요)
+
+      post:
+        summary: 장바구니 상품 담기
+        tags: [Shop/Cart]
+        description: |
+          상품을 장바구니에 추가합니다. 
+          이미 동일한 옵션(ProductSizeId)이 담겨있다면 수량만 증가시킵니다.
+        security:
+          - clientKey: []
+          - bearerAuth: []
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddCartItemRequest'
+        responses:
+          201:
+            description: 담기 성공
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    id: { type: integer }
+                    cartId: { type: integer }
+                    productSizeId: { type: integer }
+                    quantity: { type: integer }
+
+    /api/cart/{id}:
+      put:
+        summary: 장바구니 수량 변경
+        tags: [Shop/Cart]
+        description: 장바구니 아이템의 수량을 변경합니다.
+        security:
+          - clientKey: []
+          - bearerAuth: []
+        parameters:
+          - in: path
+            name: id
+            required: true
+            description: "변경할 장바구니 아이템 ID (CartItem ID)"
+            schema:
+              type: integer
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateCartItemRequest'
+        responses:
+          200:
+            description: 수정 성공
+
+      delete:
+        summary: 장바구니 상품 삭제
+        tags: [Shop/Cart]
+        description: 장바구니에서 특정 아이템을 삭제합니다.
+        security:
+          - clientKey: []
+          - bearerAuth: []
+        parameters:
+          - in: path
+            name: id
+            required: true
+            description: "삭제할 장바구니 아이템 ID (CartItem ID)"
+            schema:
+              type: integer
+        responses:
+          200:
+            description: 삭제 성공
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message: { type: string, example: "Deleted" }
