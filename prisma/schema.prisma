@@ -222,17 +222,24 @@ model CartItem {
 
 model Order {
   id          Int         @id @default(autoincrement())
+  orderNumber String      @unique
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   status      OrderStatus @default(PENDING)
   totalAmount Int
-  zipCode     String
-  address1    String
-  address2    String
 
-  userId Int
-  user   User        @relation(fields: [userId], references: [id])
-  items  OrderItem[]
+  recipientName   String
+  recipientPhone  String
+  zipCode         String
+  address1        String
+  address2        String
+  gatePassword    String? // 공동현관 비밀번호 (선택)
+  deliveryRequest String? // 배송 요청사항 (선택)
+
+  userId  Int
+  user    User        @relation(fields: [userId], references: [id])
+  items   OrderItem[]
+  payment Payment?
 }
 
 model OrderItem {
@@ -243,6 +250,19 @@ model OrderItem {
   order         Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productSizeId Int
   productSize   ProductSize @relation(fields: [productSizeId], references: [id])
+}
+
+model Payment {
+  id         Int     @id @default(autoincrement())
+  paymentKey String? @unique
+  orderId    Int     @unique
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  method      String
+  amount      Int
+  status      String
+  requestedAt DateTime  @default(now())
+  approvedAt  DateTime?
 }
 
 model Review {

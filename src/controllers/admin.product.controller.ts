@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { productService, CreateProductInput } from "../services/productService";
+import { productService, CreateProductInput } from "../services/product.service";
 import { ProductGender, ProductStyle } from "@prisma/client";
 
 // 쿼리 파라미터를 배열로 변환하는 유틸리티

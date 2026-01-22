@@ -16,6 +16,7 @@
     "packageManager": "pnpm@10.25.0",
     "dependencies": {
         "@prisma/client": "5.22.0",
+        "axios": "^1.13.2",
         "bcryptjs": "^3.0.3",
         "cors": "^2.8.5",
         "dotenv": "^17.2.3",
@@ -27,7 +28,8 @@
         "passport-jwt": "^4.0.1",
         "prisma": "5.22.0",
         "swagger-jsdoc": "^6.2.8",
-        "swagger-ui-express": "^5.0.1"
+        "swagger-ui-express": "^5.0.1",
+        "uuid": "^13.0.0"
     },
     "devDependencies": {
         "@types/bcryptjs": "^3.0.0",

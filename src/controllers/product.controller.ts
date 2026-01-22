@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { productService } from '../services/productService';
+import { productService } from '../services/product.service';
 import { ProductGender, ProductStyle } from '@prisma/client';
 
 // 쿼리 파라미터 배열 변환 유틸
