@@ -1,12 +1,11 @@
-// src/controllers/category.controller.ts
 import { Request, Response, NextFunction } from "express";
-import { categoryService } from "../services/categoryService"; // 기존 서비스 재사용
+import { categoryService } from "../services/category.service";
+import { HttpException } from "../utils/exception.utils";
 
 export const categoryController = {
-    // [사용자용] 카테고리 전체 목록 조회 (트리 구조)
+    // 목록 조회
     getList: async (req: Request, res: Response, next: NextFunction) => {
         try {
-            // 서비스 로직은 기존과 동일하게 전체 트리를 가져옵니다.
             const categories = await categoryService.getAllCategories();
             res.status(200).json(categories);
         } catch (error) {
@@ -14,11 +13,14 @@ export const categoryController = {
         }
     },
 
-    // [New] 단일 카테고리 상세 조회 (Breadcrumbs 포함)
+    // 상세 조회
     getOne: async (req: Request, res: Response, next: NextFunction) => {
         try {
             const id = Number(req.params.id);
-            if (isNaN(id)) throw new Error("INVALID_ID");
+            if (isNaN(id)) {
+                // Zod로 Params 검증을 하지 않는다면 여기서 에러 처리
+                throw new HttpException(400, "유효하지 않은 카테고리 ID입니다.");
+            }
 
             const category = await categoryService.getCategoryById(id);
             res.status(200).json(category);

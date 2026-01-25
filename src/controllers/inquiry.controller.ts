@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { inquiryService } from '../services/inquiryService';
+import { inquiryService } from '../services/inquiry.service';
 import { InquiryType } from '@prisma/client';
 
 export const inquiryController = {

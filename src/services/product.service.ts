@@ -1,67 +1,27 @@
-import { ProductGender, ProductStyle, Prisma } from "@prisma/client";
-import { prisma } from "../config/prisma"; // 경로 확인 필요
-
-// [신규] 목록 조회용 파라미터 정의
-interface GetProductsParams {
-    page: number;
-    limit: number;
-    categoryId?: number;
-    styles?: ProductStyle[];
-    genders?: ProductGender[];
-    sizes?: string[];
-}
-
-// 입력 데이터 타입 정의 (style, gender 추가됨)
-export interface CreateProductInput {
-    name: string;
-    description: string;
-    summary?: string;
-    price: number;
-    categoryId: number;
-
-    // [신규 필드] 필터링용 속성
-    style: ProductStyle; // 예: RACING, JACKET...
-    gender: ProductGender; // 예: MALE, FEMALE, COMMON
-
-    // 메타 정보
-    material?: string;
-    sizeInfo?: string;
-    manufacturer?: string;
-    originCountry?: string;
-    careInstructions?: string;
-    manufactureDate?: string;
-    qualityAssurance?: string;
-    asPhone?: string;
-
-    // 태그
-    isNew?: boolean;
-    isBest?: boolean;
-
-    // 중첩 데이터 (색상 -> 사이즈/이미지)
-    colors: {
-        productCode: string; // 고유 코드 (예: PW0UW25F303)
-        colorName: string;
-        hexCode?: string;
-        colorInfo?: string;
-        images: string[]; // 이미지 URL 배열
-        sizes: {
-            size: string;
-            stock: number;
-        }[];
-    }[];
-}
+import { ProductGender, Prisma } from "@prisma/client";
+import { prisma } from "../config/prisma";
+import { HttpException } from "../utils/exception.utils";
+import { CreateProductInput, ProductListQuery } from "../schemas/product.schema";
 
 export const productService = {
-    // [생성] 상품 + 속성(style, gender) + 색상 + 이미지 + 사이즈 트랜잭션 생성
     async createProduct(data: CreateProductInput) {
-        // 상품 코드 중복 체크
+        // 1. 상품 코드 중복 체크
         for (const color of data.colors) {
             const exists = await prisma.productColor.findUnique({
                 where: { productCode: color.productCode },
             });
-            if (exists) throw new Error(`DUPLICATE_CODE: ${color.productCode}`);
+            if (exists) {
+                throw new HttpException(409, `이미 존재하는 상품 코드입니다: ${color.productCode}`);
+            }
         }
 
+        // 2. 카테고리 존재 확인 (Prisma FK 에러 방지)
+        const category = await prisma.category.findUnique({ where: { id: data.categoryId } });
+        if (!category) {
+            throw new HttpException(404, "존재하지 않는 카테고리입니다.");
+        }
+
+        // 3. 트랜잭션 생성
         return prisma.product.create({
             data: {
                 name: data.name,
@@ -69,11 +29,8 @@ export const productService = {
                 summary: data.summary,
                 price: data.price,
                 categoryId: data.categoryId,
-
-                // [수정] 신규 필드 저장
                 style: data.style,
                 gender: data.gender,
-
                 material: data.material,
                 sizeInfo: data.sizeInfo,
                 manufacturer: data.manufacturer,
@@ -85,7 +42,6 @@ export const productService = {
                 isNew: data.isNew,
                 isBest: data.isBest,
 
-                // Nested Write: 색상 -> (이미지, 사이즈)
                 colors: {
                     create: data.colors.map(color => ({
                         productCode: color.productCode,
@@ -96,9 +52,9 @@ export const productService = {
                             create: color.images.map(url => ({ url })),
                         },
                         sizes: {
-                            create: color.sizes.map(size => ({
-                                size: size.size,
-                                stock: size.stock,
+                            create: color.sizes.map(s => ({
+                                size: s.size,
+                                stock: s.stock,
                             })),
                         },
                     })),
@@ -113,24 +69,18 @@ export const productService = {
         });
     },
 
-    // [목록 조회] 페이지네이션 & 필터링 (styles, genders, sizes)
-    getProducts: async ({ page, limit, categoryId, styles, genders, sizes }: GetProductsParams) => {
+    // ------------------------------------------------
+    // [Public] 목록 조회
+    // ------------------------------------------------
+    async getProducts(params: ProductListQuery) {
+        const { page, limit, categoryId, styles, genders, sizes } = params;
         const skip = (page - 1) * limit;
 
-        // Where 조건 동적 생성
         const where: Prisma.ProductWhereInput = {};
 
-        // 1. 카테고리 필터
-        if (categoryId) {
-            where.categoryId = categoryId;
-        }
+        if (categoryId) where.categoryId = categoryId;
+        if (styles && styles.length > 0) where.style = { in: styles };
 
-        // 2. 종류 필터 (배열)
-        if (styles && styles.length > 0) {
-            where.style = { in: styles };
-        }
-
-        // 3. 성별 필터 (배열)
         if (genders && genders.length > 0) {
             const searchGenders = new Set(genders);
             if (searchGenders.has(ProductGender.MALE) || searchGenders.has(ProductGender.FEMALE)) {
@@ -139,21 +89,16 @@ export const productService = {
             where.gender = { in: Array.from(searchGenders) };
         }
 
-        // 4. 사이즈 필터 (Relation Filter)
         if (sizes && sizes.length > 0) {
             where.colors = {
                 some: {
                     sizes: {
-                        some: {
-                            size: { in: sizes },
-                            // stock: { gt: 0 } // 필요 시 품절 상품 제외
-                        },
+                        some: { size: { in: sizes } },
                     },
                 },
             };
         }
 
-        // DB 조회 병렬 실행
         const [total, products] = await Promise.all([
             prisma.product.count({ where }),
             prisma.product.findMany({
@@ -164,10 +109,7 @@ export const productService = {
                 include: {
                     category: true,
                     colors: {
-                        include: {
-                            images: true, // 대표 이미지
-                            sizes: true, // 사이즈 정보
-                        },
+                        include: { images: true, sizes: true },
                     },
                 },
             }),
@@ -183,7 +125,9 @@ export const productService = {
         };
     },
 
-    // [상세 조회]
+    // ------------------------------------------------
+    // [Public] 상세 조회
+    // ------------------------------------------------
     async getProductById(id: number) {
         const product = await prisma.product.findUnique({
             where: { id },
@@ -192,87 +136,106 @@ export const productService = {
                 colors: {
                     include: {
                         images: true,
-                        sizes: {
-                            orderBy: { id: "asc" },
-                        },
+                        sizes: { orderBy: { id: "asc" } },
                     },
                 },
             },
         });
 
-        if (!product) throw new Error("NOT_FOUND");
+        if (!product) {
+            throw new HttpException(404, "상품을 찾을 수 없습니다.");
+        }
         return product;
     },
 
-    // [수정] style, gender 포함하여 업데이트
+    // ------------------------------------------------
+    // [Admin] 상품 수정
+    // ------------------------------------------------
     async updateProduct(id: number, data: CreateProductInput) {
         const product = await prisma.product.findUnique({ where: { id } });
-        if (!product) throw new Error("NOT_FOUND");
+        if (!product) throw new HttpException(404, "수정할 상품을 찾을 수 없습니다.");
 
-        // 트랜잭션: 기존 색상(및 하위) 삭제 -> 정보 업데이트 -> 새 색상(및 하위) 생성
-        return prisma.$transaction(async tx => {
-            // 1. 기존 색상 연결 끊기/삭제
-            await tx.productColor.deleteMany({
-                where: { productId: id },
-            });
+        try {
+            return await prisma.$transaction(async tx => {
+                await tx.productColor.deleteMany({
+                    where: { productId: id },
+                });
 
-            // 2. 상품 정보 및 새 관계 업데이트
-            return tx.product.update({
-                where: { id },
-                data: {
-                    name: data.name,
-                    description: data.description,
-                    summary: data.summary,
-                    price: data.price,
-                    categoryId: data.categoryId,
+                // 2. 업데이트
+                return tx.product.update({
+                    where: { id },
+                    data: {
+                        name: data.name,
+                        description: data.description,
+                        summary: data.summary,
+                        price: data.price,
+                        categoryId: data.categoryId,
+                        style: data.style,
+                        gender: data.gender,
 
-                    // [수정] 신규 필드 업데이트
-                    style: data.style,
-                    gender: data.gender,
+                        // 메타 정보
+                        material: data.material,
+                        sizeInfo: data.sizeInfo,
+                        manufacturer: data.manufacturer,
+                        originCountry: data.originCountry,
+                        careInstructions: data.careInstructions,
+                        manufactureDate: data.manufactureDate,
+                        qualityAssurance: data.qualityAssurance,
+                        asPhone: data.asPhone,
+                        isNew: data.isNew,
+                        isBest: data.isBest,
 
-                    material: data.material,
-                    sizeInfo: data.sizeInfo,
-                    manufacturer: data.manufacturer,
-                    originCountry: data.originCountry,
-                    careInstructions: data.careInstructions,
-                    manufactureDate: data.manufactureDate,
-                    qualityAssurance: data.qualityAssurance,
-                    asPhone: data.asPhone,
-                    isNew: data.isNew,
-                    isBest: data.isBest,
-
-                    colors: {
-                        create: data.colors.map(color => ({
-                            productCode: color.productCode,
-                            colorName: color.colorName,
-                            hexCode: color.hexCode,
-                            colorInfo: color.colorInfo,
-                            images: {
-                                create: color.images.map(url => ({ url })),
-                            },
-                            sizes: {
-                                create: color.sizes.map(size => ({
-                                    size: size.size,
-                                    stock: size.stock,
-                                })),
-                            },
-                        })),
+                        // 새 색상 생성
+                        colors: {
+                            create: data.colors.map(color => ({
+                                productCode: color.productCode,
+                                colorName: color.colorName,
+                                hexCode: color.hexCode,
+                                colorInfo: color.colorInfo,
+                                images: {
+                                    create: color.images.map(url => ({ url })),
+                                },
+                                sizes: {
+                                    create: color.sizes.map(s => ({
+                                        size: s.size,
+                                        stock: s.stock,
+                                    })),
+                                },
+                            })),
+                        },
                     },
-                },
-                include: {
-                    colors: { include: { images: true, sizes: true } },
-                },
+                    include: {
+                        colors: { include: { images: true, sizes: true } },
+                    },
+                });
             });
-        });
+        } catch (error: any) {
+            if (error.code === "P2003") {
+                throw new HttpException(
+                    409,
+                    "이 상품은 이미 주문/장바구니에 담겨 있어 옵션을 전체 수정할 수 없습니다.",
+                );
+            }
+            throw error;
+        }
     },
 
-    // [삭제]
+    // ------------------------------------------------
+    // [Admin] 삭제
+    // ------------------------------------------------
     async deleteProduct(id: number) {
         const product = await prisma.product.findUnique({ where: { id } });
-        if (!product) throw new Error("NOT_FOUND");
+        if (!product) throw new HttpException(404, "삭제할 상품을 찾을 수 없습니다.");
 
-        return prisma.product.delete({
-            where: { id },
-        });
+        try {
+            return await prisma.product.delete({
+                where: { id },
+            });
+        } catch (error: any) {
+            if (error.code === "P2003") {
+                throw new HttpException(409, "주문 내역이 존재하는 상품은 삭제할 수 없습니다.");
+            }
+            throw error;
+        }
     },
 };

@@ -236,6 +236,9 @@ model Order {
   gatePassword    String? // 공동현관 비밀번호 (선택)
   deliveryRequest String? // 배송 요청사항 (선택)
 
+  trackingNumber String? // 운송장 번호
+  carrier        String? // 택배사 (CJ대한통운, 우체국 등)
+
   userId  Int
   user    User        @relation(fields: [userId], references: [id])
   items   OrderItem[]

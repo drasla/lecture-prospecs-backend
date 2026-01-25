@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { inquiryController } from '../controllers/inquiryController';
+import { inquiryController } from '../controllers/inquiry.controller';
 import { authenticateJwt } from '../middlewares/authMiddleware';
 
 const router = Router();

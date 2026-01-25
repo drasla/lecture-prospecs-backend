@@ -1,23 +1,25 @@
-import { Router } from 'express';
-import { adminCategoryController } from '../controllers/admin.category.controller';
-import { authenticateJwt } from '../middlewares/authMiddleware';
-import { isAdmin } from '../middlewares/adminMiddleware';
+import { Router } from "express";
+import { adminCategoryController } from "../controllers/admin.category.controller";
+import { authenticateJwt } from "../middlewares/authMiddleware";
+import { isAdmin } from "../middlewares/adminMiddleware";
+import { CreateCategorySchema, UpdateCategorySchema } from "../schemas/admin.category.schema";
+import { validateBody } from "../middlewares/validation.middleware";
 
 const router = Router();
 
-// 모든 경로에 공통 미들웨어 적용 (로그인 + 관리자 체크)
+// [공통] 관리자 권한 체크
 router.use(authenticateJwt, isAdmin);
 
 // GET /admin/categories
-router.get('/', adminCategoryController.getList);
+router.get("/", adminCategoryController.getList);
 
-// POST /admin/categories
-router.post('/', adminCategoryController.create);
+// POST /admin/categories (Body 검증)
+router.post("/", validateBody(CreateCategorySchema), adminCategoryController.create);
 
-// PUT /admin/categories/:id
-router.put('/:id', adminCategoryController.update);
+// PUT /admin/categories/:id (Body 검증)
+router.put("/:id", validateBody(UpdateCategorySchema), adminCategoryController.update);
 
 // DELETE /admin/categories/:id
-router.delete('/:id', adminCategoryController.delete);
+router.delete("/:id", adminCategoryController.delete);
 
 export default router;
