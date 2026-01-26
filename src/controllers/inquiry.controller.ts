@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { inquiryService } from '../services/inquiry.service';
-import { InquiryType } from '@prisma/client';
+import { InquiryType } from "@prisma/client";
+import { inquiryService } from "../services/inquiry.service";
 
 export const inquiryController = {
     createInquiry: async (req: Request, res: Response) => {
