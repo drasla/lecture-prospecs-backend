@@ -57,6 +57,9 @@ app.use("/api/orders", orderRoutes);
 
 app.use(errorMiddleware);
 
+
+console.log("1.0.1에 이게 포함되어야 합니다.");
+
 app.listen(PORT, () => {
     console.log(`[server]: Server is running at http://localhost:${PORT}`);
     console.log(`📄 Scalar Docs available at http://localhost:${PORT}/api-docs`);
