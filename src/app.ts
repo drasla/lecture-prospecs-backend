@@ -57,6 +57,8 @@ app.use("/api/orders", orderRoutes);
 
 app.use(errorMiddleware);
 
+console.log("!");
+
 app.listen(PORT, () => {
     console.log(`[server]: Server is running at http://localhost:${PORT}`);
     console.log(`📄 Scalar Docs available at http://localhost:${PORT}/api-docs`);
