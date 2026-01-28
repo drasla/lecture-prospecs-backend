@@ -13,6 +13,7 @@ router.post(
     reviewController.createReview,
 );
 router.get("/products/:productId/reviews", reviewController.getProductReviews);
+router.get("/reviews/me", authenticateJwt, reviewController.getMyReviews);
 router.put(
     "/reviews/:id",
     authenticateJwt,

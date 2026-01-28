@@ -102,4 +102,46 @@ export const reviewService = {
             where: { id: reviewId },
         });
     },
+
+    async getMyReviews(userId: number) {
+        const reviews = await prisma.review.findMany({
+            where: { userId },
+            orderBy: { createdAt: "desc" },
+            include: {
+                images: true,
+                product: {
+                    select: {
+                        id: true,
+                        name: true,
+                        colors: {
+                            take: 1,
+                            include: {
+                                images: {
+                                    take: 1,
+                                    select: { url: true },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        return reviews.map(review => {
+            const productThumb = review.product.colors[0]?.images[0]?.url || null;
+
+            return {
+                id: review.id,
+                rating: review.rating,
+                content: review.content,
+                createdAt: review.createdAt,
+                images: review.images,
+                product: {
+                    id: review.product.id,
+                    name: review.product.name,
+                    thumbnail: productThumb,
+                },
+            };
+        });
+    },
 };

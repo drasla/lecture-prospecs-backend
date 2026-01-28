@@ -60,6 +60,26 @@ export const ReviewResponseSchema = z
     })
     .openapi("ReviewResponse");
 
+export const MyReviewResponseSchema = z
+    .object({
+        id: z.number(),
+        rating: z.number(),
+        content: z.string().nullable(),
+        createdAt: z.iso.datetime(),
+        product: z.object({
+            id: z.number(),
+            name: z.string(),
+            thumbnail: z.string().nullable(),
+        }),
+        images: z.array(
+            z.object({
+                id: z.number(),
+                url: z.string(),
+            }),
+        ),
+    })
+    .openapi("MyReviewResponse");
+
 registry.registerPath({
     method: "post",
     path: "/reviews",
@@ -150,6 +170,25 @@ registry.registerPath({
             content: {
                 "application/json": {
                     schema: z.array(ReviewResponseSchema),
+                },
+            },
+        },
+    },
+});
+
+registry.registerPath({
+    method: "get",
+    path: "/reviews/me",
+    tags: [REVIEW_TAG],
+    summary: "내 리뷰 목록 조회",
+    description: "내가 작성한 리뷰 목록을 상품 정보와 함께 조회합니다.",
+    security: [{ bearerAuth: [] }],
+    responses: {
+        200: {
+            description: "조회 성공",
+            content: {
+                "application/json": {
+                    schema: z.array(MyReviewResponseSchema),
                 },
             },
         },

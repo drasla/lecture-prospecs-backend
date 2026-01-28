@@ -55,4 +55,14 @@ export const reviewController = {
             next(error);
         }
     },
+
+    getMyReviews: async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const userId = req.user!.id;
+            const reviews = await reviewService.getMyReviews(userId);
+            res.status(200).json(reviews);
+        } catch (error) {
+            next(error);
+        }
+    },
 };
