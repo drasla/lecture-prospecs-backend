@@ -269,15 +269,23 @@ model Payment {
 }
 
 model Review {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        Int           @id @default(autoincrement())
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
   rating    Int
   content   String?
   userId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
   productId Int
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product       @relation(fields: [productId], references: [id])
+  images    ReviewImage[]
+}
+
+model ReviewImage {
+  id       Int    @id @default(autoincrement())
+  url      String
+  reviewId Int
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
 }
 
 model Post {

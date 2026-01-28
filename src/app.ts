@@ -7,7 +7,6 @@ import { jwtStrategy } from "./config/passport";
 import adminCategoryRoutes from "./routes/admin.category.routes";
 import adminOrderRoutes from "./routes/admin.order.routes";
 import adminProductRoutes from "./routes/admin.product.routes";
-import adminUploadRoutes from "./routes/admin.upload.routes";
 import productRoutes from "./routes/product.routes";
 import categoryRoutes from "./routes/category.routes";
 import cartRoutes from "./routes/cart.routes";
@@ -23,6 +22,8 @@ import "./schemas/order.schema";
 import "./schemas/admin.category.schema";
 import "./schemas/admin.product.schema";
 import "./schemas/admin.order.schema";
+import uploadRoutes from "./routes/upload.routes";
+import reviewRoute from "./routes/review.route";
 
 const app = express();
 const PORT = 4001;
@@ -49,16 +50,14 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin/categories", adminCategoryRoutes);
 app.use("/api/admin/orders", adminOrderRoutes);
 app.use("/api/admin/products", adminProductRoutes);
-app.use("/api/admin/uploads", adminUploadRoutes);
+app.use("/api/uploads", uploadRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api", reviewRoute);
 
 app.use(errorMiddleware);
-
-
-console.log("1.0.1에 이게 포함되어야 합니다.");
 
 app.listen(PORT, () => {
     console.log(`[server]: Server is running at http://localhost:${PORT}`);
