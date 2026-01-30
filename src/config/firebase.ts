@@ -7,7 +7,18 @@ const {
     FIREBASE_STORAGE_BUCKET,
 } = process.env;
 
-const privateKey = FIREBASE_PRIVATE_KEY ? FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n") : undefined;
+const getPrivateKey = (key: string | undefined) => {
+    if (!key) return undefined;
+
+    if (!key.includes("-----BEGIN PRIVATE KEY-----")) {
+        const decoded = Buffer.from(key, "base64").toString("utf8");
+        return decoded.replace(/\\n/g, "\n");
+    }
+
+    return key.replace(/\\n/g, "\n");
+};
+
+const privateKey = getPrivateKey(FIREBASE_PRIVATE_KEY);
 
 if (!FIREBASE_PROJECT_ID || !privateKey || !FIREBASE_CLIENT_EMAIL) {
     throw new Error("Firebase 환경 변수가 설정되지 않았습니다.");
