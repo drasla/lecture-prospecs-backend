@@ -24,6 +24,8 @@ import "./schemas/admin.product.schema";
 import "./schemas/admin.order.schema";
 import uploadRoutes from "./routes/upload.routes";
 import reviewRoute from "./routes/review.route";
+import inquiryRoutes from "./routes/inquiry.routes";
+import adminInquiryRoutes from "./routes/admin.inquiry.routes";
 
 const app = express();
 const PORT = 4001;
@@ -50,11 +52,13 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin/categories", adminCategoryRoutes);
 app.use("/api/admin/orders", adminOrderRoutes);
 app.use("/api/admin/products", adminProductRoutes);
+app.use("/admin/inquiries", adminInquiryRoutes);
 app.use("/api/uploads", uploadRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/inquiries", inquiryRoutes);
 app.use("/api", reviewRoute);
 
 app.use(errorMiddleware);

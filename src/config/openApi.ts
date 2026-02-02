@@ -21,5 +21,29 @@ export function generateOpenApiDocs() {
             version: "1.0.0",
         },
         servers: [{ url: "/api" }],
+        "x-tagGroups": [
+            {
+                name: "공용 API",
+                tags: [
+                    "Auth",
+                    "Category",
+                    "Product",
+                    "Cart",
+                    "Order",
+                    "Review",
+                    "Inquiry",
+                    "Upload",
+                ],
+            },
+            {
+                name: "관리자 API",
+                tags: [
+                    "Admin/Category",
+                    "Admin/Product",
+                    "Admin/Order",
+                    "Admin/Inquiry",
+                ],
+            },
+        ],
     });
 }

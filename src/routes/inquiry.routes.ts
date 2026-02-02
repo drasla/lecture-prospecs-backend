@@ -1,23 +1,13 @@
-import { Router } from 'express';
-import multer from 'multer';
-import { inquiryController } from '../controllers/inquiry.controller';
-import { authenticateJwt } from '../middlewares/authMiddleware';
+import { Router } from "express";
+import { inquiryController } from "../controllers/inquiry.controller";
+import { authenticateJwt } from "../middlewares/authMiddleware";
+import { validateBody } from "../middlewares/validation.middleware";
+import { CreateInquirySchema } from "../schemas/inquiry.schema";
 
 const router = Router();
 
-// 메모리 스토리지 (Firebase로 바로 넘기기 위해)
-const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB 제한
-});
-
-// POST /api/inquiries
-// [중요] upload.array('images', 5): 'images'라는 필드명으로 최대 5개 파일 허용
-router.post(
-    '/',
-    authenticateJwt,
-    upload.array('images', 5),
-    inquiryController.createInquiry
-);
+router.get("/me", authenticateJwt, inquiryController.getMyList);
+router.get("/:id", authenticateJwt, inquiryController.getDetail);
+router.post("/", authenticateJwt, validateBody(CreateInquirySchema), inquiryController.create);
 
 export default router;

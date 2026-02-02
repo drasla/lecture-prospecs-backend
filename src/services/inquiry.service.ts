@@ -1,48 +1,136 @@
-import { prisma } from '../config/prisma';
-import { Inquiry, InquiryType } from '@prisma/client';
-import { uploadFileToFirebase } from "../utils/upload.utils";
-
-// 1. 입력 데이터 타입 정의
-interface CreateInquiryInput {
-    userId: number;
-    type: InquiryType; // Enum
-    title: string;
-    content: string;
-    files?: Express.Multer.File[]; // Multer가 처리한 파일 배열
-}
+import { prisma } from "../config/prisma";
+import { HttpException } from "../utils/exception.utils";
+import { CreateInquiryInput, AnswerInquiryInput } from "../schemas/inquiry.schema";
+import { InquiryStatus, Prisma } from "@prisma/client";
 
 export const inquiryService = {
-    async createInquiry(data: CreateInquiryInput) {
-        // 1. 이미지 파일이 있다면 Firebase에 업로드하고 URL들을 받음
-        const imageUrls: string[] = [];
+    // ------------------------------------
+    // [User] 문의 등록
+    // ------------------------------------
+    async createInquiry(userId: number, data: CreateInquiryInput) {
+        const { type, title, content, images } = data;
 
-        if (data.files && data.files.length > 0) {
-            // Promise.all을 사용하여 병렬 업로드 처리 (속도 향상)
-            const uploadPromises = data.files.map(file =>
-                uploadFileToFirebase(file, 'inquiries') // 'inquiries' 폴더에 저장
-            );
-            const urls = await Promise.all(uploadPromises);
-            imageUrls.push(...urls);
-        }
-
-        // 2. DB에 문의 내용과 이미지 URL을 한 번에 저장 (Transaction)
-        // Prisma의 Nested Write 기능을 사용
-        const newInquiry = await prisma.inquiry.create({
+        return prisma.inquiry.create({
             data: {
-                userId: data.userId,
-                type: data.type,
-                title: data.title,
-                content: data.content,
-                // 이미지가 있으면 InquiryImage 테이블에도 같이 insert
+                userId,
+                type,
+                title,
+                content,
                 images: {
-                    create: imageUrls.map(url => ({ url }))
-                }
+                    create: images?.map(url => ({ url })) || [],
+                },
             },
             include: {
-                images: true, // 결과 반환 시 이미지 정보도 포함
-            }
+                images: true,
+            },
+        });
+    },
+
+    // ------------------------------------
+    // [User] 내 문의 목록 조회
+    // ------------------------------------
+    async getMyInquiries(userId: number, page: number, limit: number) {
+        const skip = (page - 1) * limit;
+
+        const [inquiries, total] = await Promise.all([
+            prisma.inquiry.findMany({
+                where: { userId },
+                skip,
+                take: limit,
+                orderBy: { createdAt: "desc" },
+                include: { images: true },
+            }),
+            prisma.inquiry.count({ where: { userId } }),
+        ]);
+
+        return {
+            data: inquiries,
+            meta: {
+                total,
+                page,
+                lastPage: Math.ceil(total / limit),
+            },
+        };
+    },
+
+    // ------------------------------------
+    // [Common] 문의 상세 조회 (권한 체크 포함)
+    // ------------------------------------
+    async getInquiryById(inquiryId: number, userId: number, userRole: string) {
+        const inquiry = await prisma.inquiry.findUnique({
+            where: { id: inquiryId },
+            include: {
+                images: true,
+                user: {
+                    select: { name: true, email: true },
+                },
+            },
         });
 
-        return newInquiry;
-    }
+        if (!inquiry) {
+            throw new HttpException(404, "문의 내역을 찾을 수 없습니다.");
+        }
+
+        // 권한 체크: 관리자거나, 작성자 본인이어야 함
+        if (userRole !== "ADMIN" && inquiry.userId !== userId) {
+            throw new HttpException(403, "이 문의 내역에 접근할 권한이 없습니다.");
+        }
+
+        return inquiry;
+    },
+
+    // ------------------------------------
+    // [Admin] 전체 문의 조회
+    // ------------------------------------
+    async getAllInquiries(page: number, limit: number, status?: InquiryStatus) {
+        const skip = (page - 1) * limit;
+        const where: Prisma.InquiryWhereInput = status ? { status } : {};
+
+        const [inquiries, total] = await Promise.all([
+            prisma.inquiry.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { createdAt: "desc" },
+                include: {
+                    user: { select: { name: true, email: true } },
+                    images: true, // 목록에서 이미지가 필요 없다면 제외 가능
+                },
+            }),
+            prisma.inquiry.count({ where }),
+        ]);
+
+        return {
+            data: inquiries,
+            meta: {
+                total,
+                page,
+                lastPage: Math.ceil(total / limit),
+            },
+        };
+    },
+
+    // ------------------------------------
+    // [Admin] 답변 등록/수정
+    // ------------------------------------
+    async answerInquiry(inquiryId: number, data: AnswerInquiryInput) {
+        const inquiry = await prisma.inquiry.findUnique({ where: { id: inquiryId } });
+
+        if (!inquiry) {
+            throw new HttpException(404, "문의 내역을 찾을 수 없습니다.");
+        }
+
+        return prisma.inquiry.update({
+            where: { id: inquiryId },
+            data: {
+                answer: data.answer,
+                status: "ANSWERED",
+                answeredAt: new Date(),
+            },
+            include: {
+                images: true,
+                user: { select: { name: true, email: true } },
+            },
+        });
+    },
 };
